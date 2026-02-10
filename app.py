@@ -6,8 +6,6 @@ model = joblib.load("mental_health_ridge.pkl")
 
 st.set_page_config(page_title="Student Mental Health Predictor", layout="centered")
 
-# ---------------- STYLE ---------------- #
-
 st.markdown("""
 <style>
 
@@ -25,108 +23,92 @@ st.markdown("""
     margin-bottom: 25px;
 }
 
-.hero h1 {
-    color: #2C3E50;
-}
+.good {background:#e8f5e9;padding:18px;border-radius:14px;margin-top:20px;}
+.mid {background:#fff8e1;padding:18px;border-radius:14px;margin-top:20px;}
+.high {background:#ffebee;padding:18px;border-radius:14px;margin-top:20px;}
 
 div[data-testid="stForm"] {
-    background-color: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0px 4px 20px rgba(0,0,0,0.15);
+    background:white;
+    padding:40px;
+    border-radius:30px;
+    box-shadow:0px 6px 25px rgba(0,0,0,0.2);
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- HERO ---------------- #
 
 st.markdown("""
 <div class="hero">
 <h1>🎓 Student Mental Health Prediction</h1>
-<p>Understand your mental well-being today.<br>
-<b>Get the help you need before it’s too late.</b></p>
+<p><b>Get the help you need before it’s too late.</b></p>
 </div>
 """, unsafe_allow_html=True)
 
-# ---------------- FORM ---------------- #
 
 with st.form("prediction_form"):
-
-    st.subheader("📘 Basic Information")
 
     age = st.slider("Age", 18, 30, 21)
     stress = st.slider("Stress Level", 0, 5, 3)
     anxiety = st.slider("Anxiety Score", 0, 5, 3)
     financial = st.slider("Financial Stress", 0, 5, 2)
-
     semester_load = st.slider("Semester Credit Load", 10, 30, 18)
     cgpa = st.slider("CGPA", 2.0, 4.0, 3.4)
 
-    st.subheader("💙 Lifestyle & Background")
-
-    course = st.radio("Course", ["Computer Science","Engineering","Law","Medical","Others"])
+    course = st.radio("Course", ["Computer Science","Engineering","Law","Medical","Business","Others"])
     gender = st.radio("Gender", ["Male","Female"])
-    sleep = st.radio("Sleep Quality", ["Good","Poor"])
-    activity = st.radio("Physical Activity", ["Low","Moderate"])
-    diet = st.radio("Diet Quality", ["Good","Poor"])
-    substance = st.radio("Substance Use", ["Never","Occasionally"])
-    counsel = st.radio("Counselling Service Use", ["Never","Occasionally"])
+
+    sleep = st.radio("Sleep Quality", ["Good","Average","Poor"])
+    activity = st.radio("Physical Activity", ["Low","Moderate","High"])
+    diet = st.radio("Diet Quality", ["Good","Average","Poor"])
+    social = st.radio("Social Support", ["Low","Moderate","High"])
+    relationship = st.radio("Relationship Status", ["Single","Married"])
+
+    substance = st.radio("Substance Use", ["Never","Occasionally","Frequently"])
+    counsel = st.radio("Counseling Service Use", ["Never","Occasionally","Frequently"])
+
     family = st.radio("Family History", ["Yes","No"])
     chronic = st.radio("Chronic Illness", ["Yes","No"])
     residence = st.radio("Residence Type", ["On-Campus","With Family"])
 
-    submitted = st.form_submit_button("🔍 Predict Depression Score")
+    submitted = st.form_submit_button("🔍 Predict")
 
     if submitted:
 
-        if cgpa <= 0:
-            st.error("CGPA must be greater than zero.")
+        psych = (stress + anxiety + financial) / 3
+        academic = (semester_load / cgpa) * 10
 
+        df = pd.DataFrame({
+            "Age":[age],
+            "Psychological_Score":[psych],
+            "Academic_Stress_Index":[academic],
+            "Course":[course],
+            "Gender":[gender],
+            "Sleep_Quality":[sleep],
+            "Physical_Activity":[activity],
+            "Diet_Quality":[diet],
+            "Social_Support":[social],
+            "Relationship_Status":[relationship],
+            "Substance_Use":[substance],
+            "Counseling_Service_Use":[counsel],
+            "Family_History":[family],
+            "Chronic_Illness":[chronic],
+            "Residence_Type":[residence]
+        })
+
+        df = pd.get_dummies(df)
+
+        df = df.reindex(columns=model.feature_names_in_, fill_value=0)
+
+        pred = model.predict(df)[0]
+
+        st.markdown(f"<h2 style='margin-top:30px;'>🧠 Depression Score: {pred:.2f}</h2>", unsafe_allow_html=True)
+
+        if pred < 2:
+            st.markdown("<div class='good'>🟢 Low Risk — Maintain healthy habits.</div>", unsafe_allow_html=True)
+        elif pred < 4:
+            st.markdown("<div class='mid'>🟡 Moderate Risk — Consider seeking support.</div>", unsafe_allow_html=True)
         else:
+            st.markdown("<div class='high'>🔴 High Risk — Please seek professional help.</div>", unsafe_allow_html=True)
 
-            psych_score = stress + anxiety + financial / 3
-            academic_index = (semester_load / cgpa) * 10
-
-            df = pd.DataFrame({
-                "Age":[age],
-                "Psychological_Score":[psych_score],
-                "Academic_Stress_Index":[academic_index],
-            })
-
-            ohe = {
-                "Course_Computer Science": course=="Computer Science",
-                "Course_Engineering": course=="Engineering",
-                "Course_Law": course=="Law",
-                "Course_Medical": course=="Medical",
-                "Course_Others": course=="Others",
-                "Gender_Male": gender=="Male",
-                "Sleep_Quality_Good": sleep=="Good",
-                "Physical_Activity_Low": activity=="Low",
-                "Diet_Quality_Good": diet=="Good",
-                "Substance_Use_Never": substance=="Never",
-                "Counseling_Service_Use_Never": counsel=="Never",
-                "Family_History_Yes": family=="Yes",
-                "Chronic_Illness_Yes": chronic=="Yes",
-                "Residence_Type_On-Campus": residence=="On-Campus",
-            }
-
-            for k,v in ohe.items():
-                df[k] = int(v)
-
-            df = df.reindex(columns=model.feature_names_in_, fill_value=0)
-
-            pred = model.predict(df)[0]
-
-            st.divider()
-            st.subheader("📝 Prediction Result")
-            st.success(f"🧠 Predicted Depression Score: {pred:.2f}")
-
-            if pred < 2:
-                st.info("🟢 Low Risk. Keep maintaining healthy habits!")
-            elif pred < 4:
-                st.warning("🟡 Moderate Risk. Consider reaching out for support.")
-            else:
-                st.error("🔴 High Risk. Please seek professional help.")
-
-            st.caption("This is an educational Ridge Linear Regression model, not medical advice.")
+        st.caption("Educational Ridge Regression model. Not medical advice.")
