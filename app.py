@@ -105,10 +105,10 @@ with st.form("prediction_form"):
         st.markdown(f"<h2 style='margin-top:30px;'>🧠 Depression Score: {pred:.2f}</h2>", unsafe_allow_html=True)
 
         if pred < 2:
-            st.markdown("<div class='good'>🟢 Low Risk — Maintain healthy habits.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='good'>🟢 Low Risk. Continue maintaining healthy habits!</div>", unsafe_allow_html=True)
         elif pred < 4:
-            st.markdown("<div class='mid'>🟡 Moderate Risk — Consider seeking support.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='mid'>🟡 Moderate Risk. Consider seeking support.</div>", unsafe_allow_html=True)
         else:
-            st.markdown("<div class='high'>🔴 High Risk — Please seek professional help.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='high'>🔴 High Risk. Please seek professional help.</div>", unsafe_allow_html=True)
 
         st.caption("Educational Ridge Regression model. Not medical advice.")
