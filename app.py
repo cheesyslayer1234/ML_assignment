@@ -71,9 +71,14 @@ with st.form("prediction_form"):
     chronic = st.radio("Chronic Illness", ["Yes","No"])
     residence = st.radio("Residence Type", ["On-Campus","With Family"])
 
+    confirm = st.checkbox("I confirm that the information entered above is accurate")
+
     submitted = st.form_submit_button("🔍 Predict")
 
     if submitted:
+        if not confirm:
+            st.error("Please confirm that your information is accurate before proceeding.")
+            st.stop()
 
         psych = (stress + anxiety + financial) / 3
         academic = (semester_load / cgpa) * 10
@@ -97,18 +102,29 @@ with st.form("prediction_form"):
         })
 
         df = pd.get_dummies(df)
-
         df = df.reindex(columns=model.feature_names_in_, fill_value=0)
 
         pred = model.predict(df)[0]
 
-        st.markdown(f"<h2 style='margin-top:30px;'>🧠 Depression Score: {pred:.2f}</h2>", unsafe_allow_html=True)
+        st.markdown(
+            f"<h2 style='margin-top:30px;'>🧠 Depression Score: {pred:.2f}</h2>",
+            unsafe_allow_html=True
+        )
 
         if pred < 2:
-            st.markdown("<div class='good'>🟢 Low Risk. Continue maintaining healthy habits!</div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='good'>🟢 Low Risk. Continue maintaining healthy habits!</div>",
+                unsafe_allow_html=True
+            )
         elif pred < 4:
-            st.markdown("<div class='mid'>🟡 Moderate Risk. Consider seeking support.</div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='mid'>🟡 Moderate Risk. Consider seeking support.</div>",
+                unsafe_allow_html=True
+            )
         else:
-            st.markdown("<div class='high'>🔴 High Risk. Please seek professional help.</div>", unsafe_allow_html=True)
+            st.markdown(
+                "<div class='high'>🔴 High Risk. Please seek professional help.</div>",
+                unsafe_allow_html=True
+            )
 
         st.caption("Educational Ridge Regression model. Not medical advice.")
